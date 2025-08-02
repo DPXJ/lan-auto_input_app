@@ -1,10 +1,10 @@
 const CACHE_NAME = 'auto-input-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json'
+  '/lan-auto_input_app/',
+  '/lan-auto_input_app/index.html',
+  '/lan-auto_input_app/style.css',
+  '/lan-auto_input_app/script.js',
+  '/lan-auto_input_app/manifest.json'
 ];
 
 // 安装Service Worker
