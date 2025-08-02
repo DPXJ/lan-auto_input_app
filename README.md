@@ -56,13 +56,19 @@
 ## 文件结构
 
 ```
-├── index.html          # 主页面文件
+├── index.html          # 主应用页面（GitHub Pages首页）
 ├── style.css           # 样式文件
 ├── script.js           # JavaScript逻辑
-└── README.md           # 项目说明
+├── README.md           # 项目说明
+└── README-部署说明.md  # 部署说明文档
 ```
 
 ## 部署说明
+
+### 在线使用（推荐）
+- 访问：https://dpxj.github.io/lan-auto_input_app/
+- 无需下载，直接使用
+- 支持所有功能
 
 ### 本地开发
 1. 下载所有文件到本地目录
