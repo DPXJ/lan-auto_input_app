@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>自动输入工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 防止iOS橡皮筋效果 */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 15px 15px;
+            color: white;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 20px;
+        }
+
+        .input-section {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            margin-bottom: 10px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message-input {
+            width: 100%;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 15px 18px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            min-height: 80px;
+            max-height: 150px;
+            line-height: 1.5;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .message-input::placeholder {
+            color: #adb5bd;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .send-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.6);
+        }
+
+        .send-btn svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+
+        .history-section {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            flex: 1;
+            position: relative;
+            min-height: 200px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .history-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .clear-btn:active {
+            transform: scale(0.95);
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.3s ease-out;
+            position: relative;
+        }
+
+        .history-content {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .history-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #6c757d;
+        }
+
+        .history-time {
+            font-weight: 500;
+        }
+
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state p:first-child {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p:last-child {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .toast.error {
+            background: #dc3545;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+
+        .toast.warning {
+            background: #ffc107;
+            color: #212529;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 移动端特殊优化 */
+        @media (max-width: 480px) {
+            .header {
+                padding: 15px 10px 10px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .header p {
+                font-size: 13px;
+            }
+            
+            .main {
+                padding: 10px;
+                gap: 15px;
+            }
+            
+            .input-section,
+            .history-section {
+                padding: 12px;
+                border-radius: 12px;
+            }
+            
+            .message-input {
+                font-size: 16px;
+                padding: 12px 15px;
+                min-height: 70px;
+                max-height: 120px;
+            }
+            
+            .send-btn {
+                height: 48px;
+                font-size: 15px;
+            }
+            
+            .send-btn svg {
+                width: 18px;
+                height: 18px;
+                margin-right: 6px;
+            }
+            
+            .history-item {
+                padding: 10px;
+            }
+            
+            .history-content {
+                font-size: 13px;
+            }
+            
+            .history-meta {
+                font-size: 10px;
+            }
+            
+            .copy-btn {
+                padding: 4px 8px;
+                font-size: 10px;
+            }
+        }
+
+        /* 横屏适配 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .header {
+                padding: 10px 15px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
+            
+            .header p {
+                font-size: 12px;
+            }
+            
+            .main {
+                padding: 10px 15px;
+                gap: 10px;
+            }
+            
+            .history-list {
+                max-height: 200px;
+            }
+        }
+
+        /* 深色模式支持 */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            }
+            
+            .input-section,
+            .history-section {
+                background: #2c3e50;
+                color: #ecf0f1;
+            }
+            
+            .message-input {
+                background: #34495e;
+                border-color: #4a5f7a;
+                color: #ecf0f1;
+            }
+            
+            .message-input:focus {
+                background: #34495e;
+                border-color: #667eea;
+            }
+            
+            .history-item {
+                background: #34495e;
+                color: #ecf0f1;
+            }
+            
+            .history-content {
+                color: #ecf0f1;
+            }
+            
+            .history-meta {
+                color: #bdc3c7;
+            }
+            
+            .history-title {
+                color: #ecf0f1;
+            }
+        }
+
+        /* 防止iOS输入框缩放 */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            .message-input {
+                font-size: 16px;
+            }
+        }
+
+        /* 确保textarea支持多行输入 */
+        .message-input {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 移动端输入优化 */
+        @media (max-width: 480px) {
+            .message-input {
+                -webkit-user-select: text;
+                -moz-user-select: text;
+                -ms-user-select: text;
+                user-select: text;
+            }
+        }
+
+        /* 滚动条样式 */
+        .history-list::-webkit-scrollbar,
+        .message-input::-webkit-scrollbar,
+        .history-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-list::-webkit-scrollbar-track,
+        .message-input::-webkit-scrollbar-track,
+        .history-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb,
+        .message-input::-webkit-scrollbar-thumb,
+        .history-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+            min-height: 40px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb:hover,
+        .message-input::-webkit-scrollbar-thumb:hover,
+        .history-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* 移动端滚动条优化 */
+        @media (max-width: 480px) {
+            .history-list::-webkit-scrollbar,
+            .message-input::-webkit-scrollbar,
+            .history-content::-webkit-scrollbar {
+                width: 12px;
+            }
+            
+            .history-list::-webkit-scrollbar-thumb,
+            .message-input::-webkit-scrollbar-thumb,
+            .history-content::-webkit-scrollbar-thumb {
+                min-height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>自动输入工具</h1>
+            <p>输入内容后自动复制到剪贴板</p>
+        </header>
+        
+        <main class="main">
+            <div class="input-section">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        class="message-input" 
+                        placeholder="请输入要复制的内容...&#10;点击发送按钮发送"
+                        rows="2"
+                        wrap="soft"
+                    ></textarea>
+                    <button id="sendBtn" class="send-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                        发送
+                    </button>
+                </div>
+            </div>
+            
+            <div class="history-section">
+                <div class="history-header">
+                    <h2 class="history-title">历史记录</h2>
+                    <button id="clearBtn" class="clear-btn">清空</button>
+                </div>
+                <div id="historyList" class="history-list">
+                    <!-- 历史记录卡片将在这里动态生成 -->
+                </div>
+            </div>
+        </main>
+        
+        <div id="toast" class="toast">已复制到剪贴板</div>
+    </div>
+
+    <script>
+        class AutoInputApp {
+            constructor() {
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendBtn');
+                this.historyList = document.getElementById('historyList');
+                this.clearBtn = document.getElementById('clearBtn');
+                this.toast = document.getElementById('toast');
+                this.history = this.loadHistory();
+                
+                this.init();
+            }
+            
+            init() {
+                // 检测移动端并设置相应的行为
+                this.isMobile = this.detectMobile();
+                
+                // 页面加载完成后自动聚焦
+                this.autoFocus();
+                
+                // 绑定事件
+                this.bindEvents();
+                
+                // 渲染历史记录
+                this.renderHistory();
+                
+                // 监听页面可见性变化，重新聚焦
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden) {
+                        setTimeout(() => this.autoFocus(), 100);
+                    }
+                });
+                
+                // 监听页面加载完成
+                window.addEventListener('load', () => {
+                    this.autoFocus();
+                });
+                
+                // 监听页面获得焦点
+                window.addEventListener('focus', () => {
+                    setTimeout(() => this.autoFocus(), 200);
+                });
+                
+                // 监听触摸事件，确保聚焦
+                document.addEventListener('touchstart', () => {
+                    if (document.activeElement !== this.messageInput) {
+                        setTimeout(() => this.autoFocus(), 100);
+                    }
+                });
+            }
+            
+            detectMobile() {
+                return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            }
+            
+            autoFocus() {
+                // 延迟聚焦，确保页面完全加载
+                setTimeout(() => {
+                    this.messageInput.focus();
+                    // 移动端键盘弹出
+                    this.messageInput.click();
+                    // 强制触发键盘弹出
+                    this.messageInput.setSelectionRange(0, 0);
+                }, 300);
+                
+                // 额外的聚焦尝试
+                setTimeout(() => {
+                    this.messageInput.focus();
+                    this.messageInput.click();
+                }, 800);
+                
+                // 页面完全加载后的聚焦
+                setTimeout(() => {
+                    this.messageInput.focus();
+                    this.messageInput.click();
+                }, 1500);
+            }
+            
+            bindEvents() {
+                // 发送按钮点击事件
+                this.sendBtn.addEventListener('click', () => {
+                    this.handleSend();
+                });
+                
+                // 输入框回车事件 - 移动端优化
+                this.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        if (this.isMobile) {
+                            // 移动端：允许正常换行，不阻止默认行为
+                            // 用户可以通过发送按钮来发送
+                            return;
+                        } else {
+                            // 桌面端：Shift+Enter换行，Enter发送
+                            if (!e.shiftKey) {
+                                e.preventDefault();
+                                this.handleSend();
+                            }
+                        }
+                    }
+                });
+                
+                // 输入框获得焦点时滚动到顶部
+                this.messageInput.addEventListener('focus', () => {
+                    setTimeout(() => {
+                        window.scrollTo(0, 0);
+                    }, 100);
+                });
+                
+                // 自动调整高度
+                this.messageInput.addEventListener('input', () => {
+                    this.adjustTextareaHeight();
+                });
+                
+
+                
+                // 清空历史记录
+                this.clearBtn.addEventListener('click', () => {
+                    if (confirm('确定要清空所有历史记录吗？')) {
+                        this.clearHistory();
+                    }
+                });
+                
+                // 防止页面滚动时失去焦点
+                document.addEventListener('touchmove', (e) => {
+                    if (e.target === this.messageInput) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
+            
+            adjustTextareaHeight() {
+                this.messageInput.style.height = 'auto';
+                const maxHeight = this.isMobile ? 120 : 150;
+                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, maxHeight) + 'px';
+            }
+            
+            async handleSend() {
+                const content = this.messageInput.value.trim();
+                
+                if (!content) {
+                    this.showToast('请输入内容', 'warning');
+                    return;
+                }
+                
+                try {
+                    // 复制到剪贴板
+                    await this.copyToClipboard(content);
+                    
+                    // 添加到历史记录
+                    this.addToHistory(content);
+                    
+                    // 清空输入框
+                    this.messageInput.value = '';
+                    this.adjustTextareaHeight();
+                    
+                    // 显示成功提示
+                    this.showToast('已复制到剪贴板');
+                    
+                    // 重新聚焦
+                    setTimeout(() => {
+                        this.messageInput.focus();
+                        this.messageInput.click();
+                        this.messageInput.setSelectionRange(0, 0);
+                    }, 200);
+                    
+                } catch (error) {
+                    console.error('复制失败:', error);
+                    this.showToast('复制失败，请重试', 'error');
+                }
+            }
+            
+            async copyToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    // 现代浏览器API
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    // 降级方案
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    return new Promise((resolve, reject) => {
+                        try {
+                            document.execCommand('copy');
+                            textArea.remove();
+                            resolve();
+                        } catch (err) {
+                            textArea.remove();
+                            reject(err);
+                        }
+                    });
+                }
+            }
+            
+            addToHistory(content) {
+                const historyItem = {
+                    id: Date.now(),
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                    time: new Date().toLocaleString('zh-CN')
+                };
+                
+                this.history.unshift(historyItem);
+                
+                // 限制历史记录数量
+                if (this.history.length > 50) {
+                    this.history = this.history.slice(0, 50);
+                }
+                
+                this.saveHistory();
+                this.renderHistory();
+            }
+            
+            async copyHistoryItem(content) {
+                try {
+                    await this.copyToClipboard(content);
+                    this.showToast('已复制到剪贴板');
+                } catch (error) {
+                    console.error('复制失败:', error);
+                    this.showToast('复制失败，请重试', 'error');
+                }
+            }
+            
+            renderHistory() {
+                if (this.history.length === 0) {
+                    this.historyList.innerHTML = `
+                        <div class="empty-state">
+                            <p>暂无历史记录</p>
+                            <p>输入内容并发送后，将在这里显示</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                this.historyList.innerHTML = this.history.map(item => `
+                    <div class="history-item" data-id="${item.id}">
+                        <div class="history-content">${this.escapeHtml(item.content)}</div>
+                        <div class="history-meta">
+                            <span class="history-time">${item.time}</span>
+                            <button class="copy-btn" onclick="app.copyHistoryItem('${this.escapeHtml(item.content)}')">
+                                复制
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            showToast(message, type = 'success') {
+                this.toast.textContent = message;
+                this.toast.className = `toast ${type}`;
+                this.toast.classList.add('show');
+                
+                setTimeout(() => {
+                    this.toast.classList.remove('show');
+                }, 2000);
+            }
+            
+            loadHistory() {
+                try {
+                    const saved = localStorage.getItem('autoInputHistory');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (error) {
+                    console.error('加载历史记录失败:', error);
+                    return [];
+                }
+            }
+            
+            saveHistory() {
+                try {
+                    localStorage.setItem('autoInputHistory', JSON.stringify(this.history));
+                } catch (error) {
+                    console.error('保存历史记录失败:', error);
+                }
+            }
+            
+            clearHistory() {
+                this.history = [];
+                this.saveHistory();
+                this.renderHistory();
+                this.showToast('历史记录已清空');
+            }
+        }
+
+        // 初始化应用
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new AutoInputApp();
+        });
+
+        // 防止iOS橡皮筋效果
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html> 
