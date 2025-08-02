@@ -11,13 +11,13 @@
   "lang": "zh-CN",
   "icons": [
     {
-      "src": "https://i.postimg.cc/zLNLk2W5/aaa.png",
+      "src": "https://via.placeholder.com/192x192/667eea/ffffff?text=自动输入",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://i.postimg.cc/zLNLk2W5/aaa.png",
+      "src": "https://via.placeholder.com/512x512/667eea/ffffff?text=自动输入",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
