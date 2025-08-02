@@ -601,33 +601,103 @@
                         setTimeout(() => this.autoFocus(), 100);
                     }
                 });
+                
+                // 移动端键盘弹出优化
+                if (this.isMobile) {
+                    // 监听页面完全加载后的键盘触发
+                    window.addEventListener('load', () => {
+                        setTimeout(() => {
+                            this.triggerKeyboard();
+                        }, 1000);
+                    });
+                    
+                    // 监听DOM内容加载完成
+                    document.addEventListener('DOMContentLoaded', () => {
+                        setTimeout(() => {
+                            this.triggerKeyboard();
+                        }, 800);
+                    });
+                    
+                    // 监听页面可见性变化
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) {
+                            setTimeout(() => {
+                                this.triggerKeyboard();
+                            }, 500);
+                        }
+                    });
+                    
+                    // 监听窗口获得焦点
+                    window.addEventListener('focus', () => {
+                        setTimeout(() => {
+                            this.triggerKeyboard();
+                        }, 300);
+                    });
+                    
+                    // 监听触摸开始事件
+                    document.addEventListener('touchstart', () => {
+                        if (document.activeElement !== this.messageInput) {
+                            setTimeout(() => {
+                                this.triggerKeyboard();
+                            }, 200);
+                        }
+                    });
+                }
             }
             
             detectMobile() {
                 return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             }
             
-            autoFocus() {
-                // 延迟聚焦，确保页面完全加载
+            triggerKeyboard() {
+                // 强制触发移动端键盘
+                this.messageInput.focus();
+                this.messageInput.click();
+                this.messageInput.setSelectionRange(0, 0);
+                
+                // 模拟用户点击，确保键盘弹出
+                const event = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                this.messageInput.dispatchEvent(event);
+                
+                // 再次聚焦
                 setTimeout(() => {
                     this.messageInput.focus();
-                    // 移动端键盘弹出
                     this.messageInput.click();
-                    // 强制触发键盘弹出
+                }, 100);
+            }
+            
+            autoFocus() {
+                // 初始聚焦
+                setTimeout(() => {
+                    this.messageInput.focus();
+                    this.messageInput.click();
                     this.messageInput.setSelectionRange(0, 0);
                 }, 300);
                 
-                // 额外的聚焦尝试
+                // 1-2秒后再次聚焦，确保键盘弹出
                 setTimeout(() => {
                     this.messageInput.focus();
                     this.messageInput.click();
-                }, 800);
+                    this.messageInput.setSelectionRange(0, 0);
+                }, 1200);
                 
-                // 页面完全加载后的聚焦
+                // 2-3秒后第三次聚焦，确保键盘稳定
                 setTimeout(() => {
                     this.messageInput.focus();
                     this.messageInput.click();
-                }, 1500);
+                    this.messageInput.setSelectionRange(0, 0);
+                }, 2500);
+                
+                // 页面完全加载后的最终聚焦
+                setTimeout(() => {
+                    this.messageInput.focus();
+                    this.messageInput.click();
+                    this.messageInput.setSelectionRange(0, 0);
+                }, 3500);
             }
             
             bindEvents() {
@@ -712,9 +782,13 @@
                     
                     // 重新聚焦
                     setTimeout(() => {
-                        this.messageInput.focus();
-                        this.messageInput.click();
-                        this.messageInput.setSelectionRange(0, 0);
+                        if (this.isMobile) {
+                            this.triggerKeyboard();
+                        } else {
+                            this.messageInput.focus();
+                            this.messageInput.click();
+                            this.messageInput.setSelectionRange(0, 0);
+                        }
                     }, 200);
                     
                 } catch (error) {
